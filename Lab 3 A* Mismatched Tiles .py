@@ -63,7 +63,7 @@ def print_state(state):
     print()
 
 def get_initial_state():
-    print("Enter the initial state of the 8-puzzle (0 for empty space):")
+    print("Enter the initial state (0 for empty space):")
     initial_state = []
     for i in range(3):
         row = list(map(int, input(f"Enter row {i+1} (space-separated): ").strip().split()))
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 """
 Output
 
-Enter the initial state of the 8-puzzle (0 for empty space):
+Enter the initial state (0 for empty space):
 Enter row 1 (space-separated): 2 8 3
 Enter row 2 (space-separated): 1 6 4
 Enter row 3 (space-separated): 0 7 5
