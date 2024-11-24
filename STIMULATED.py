@@ -1,71 +1,82 @@
 import random
 import math
 
-def calculate_cost(state):
-    cost = 0
-    n = len(state)
-    for i in range(n):
-        for j in range(i + 1, n):
-            if state[i] == state[j] or abs(state[i] - state[j]) == abs(i - j):
-                cost += 1
-    return cost
+def create_board(n):
+  """Creates an initial board configuration."""
+  return [random.randint(0, n - 1) for _ in range(n)]
 
-def get_neighbors(state):
-    neighbors = []
-    n = len(state)
-    for col in range(n):
-        for row in range(n):
-            if state[col] != row:
-                new_state = list(state)
-                new_state[col] = row
-                neighbors.append(new_state)
-    return neighbors
+def calculate_conflicts(board):
+  """Calculates the number of conflicts (attacking pairs of queens)."""
+  n = len(board)
+  conflicts = 0
+  for i in range(n):
+    for j in range(i + 1, n):
+      if board[i] == board[j] or abs(board[i] - board[j]) == abs(i - j):
+        conflicts += 1
+  return conflicts
 
-def simulated_annealing(initial_state, schedule, max_iterations=1000):
-    current_state = initial_state
-    current_cost = calculate_cost(current_state)
+def generate_neighbor(board):
+  """Generates a neighboring state by moving a single queen."""
+  n = len(board)
+  neighbor = board[:]  # Create a copy
+  row_to_change = random.randint(0, n - 1)
+  neighbor[row_to_change] = random.randint(0, n - 1)
+  return neighbor
 
-    for t in range(max_iterations):
-        T = schedule(t)
-        if T == 0:
-            break
+def simulated_annealing(n, initial_temperature, cooling_rate, iterations):
+    """Solves the N-Queens problem using simulated annealing."""
+    current_board = create_board(n)
+    current_conflicts = calculate_conflicts(current_board)
+    best_board = current_board[:]
+    best_conflicts = current_conflicts
 
-        if current_cost == 0:
-            return current_state
+    temperature = initial_temperature
+    for _ in range(iterations):
+        neighbor_board = generate_neighbor(current_board)
+        neighbor_conflicts = calculate_conflicts(neighbor_board)
 
-        neighbors = get_neighbors(current_state)
-        next_state = random.choice(neighbors)
-        next_cost = calculate_cost(next_state)
+        delta_e = neighbor_conflicts - current_conflicts
 
-        ΔE = next_cost - current_cost
+        if delta_e < 0 or random.uniform(0, 1) < math.exp(-delta_e / temperature):
+            current_board = neighbor_board
+            current_conflicts = neighbor_conflicts
 
-        if ΔE < 0 or random.random() < math.exp(-ΔE / T):
-            current_state, current_cost = next_state, next_cost
-            print(f"Iteration {t}: Current state: {current_state}, Cost: {current_cost}, T: {T}")
+        if current_conflicts < best_conflicts:
+            best_board = current_board[:]
+            best_conflicts = current_conflicts
 
-    print(f"Max iterations reached without finding a solution.")
-    return None
+        temperature *= cooling_rate
 
-def linear_schedule(t, initial_temp=1000, final_temp=1, max_iter=1000):
-    return max(final_temp, initial_temp - (initial_temp - final_temp) * (t / max_iter))
+    return best_board, best_conflicts
 
-try:
-    n = int(input("Enter the number of queens (N): "))
-    if n <= 0:
-        raise ValueError("N must be a positive integer.")
 
-    initial_state = list(map(int, input(f"Enter the initial state as a list of {n} integers (rows for each column): ").split()))
-    if len(initial_state) != n or any(not (0 <= row < n) for row in initial_state):
-        raise ValueError(f"Invalid initial state. Please provide {n} integers between 0 and {n-1}.")
-except ValueError as e:
-    print(e)
-    n = 4
-    initial_state = [random.randint(0, n - 1) for _ in range(n)]
-    print(f"Using random initial state: {initial_state}")
+# Example usage for 8 Queens
+n = 8
+initial_temperature = 1000
+cooling_rate = 0.99
+iterations = 10000
 
-solution = None
+best_solution, min_conflicts = simulated_annealing(n, initial_temperature, cooling_rate, iterations)
 
-while solution is None:
-    solution = simulated_annealing(initial_state, linear_schedule)
+print("Best Solution:", best_solution)
+print("Conflicts:", min_conflicts)
 
-print(f"Solution found: {solution}")
+
+# Visualization (Optional - requires matplotlib)
+import matplotlib.pyplot as plt
+
+def visualize_board(board):
+    n = len(board)
+    board_visual = [['.' for _ in range(n)] for _ in range(n)]
+    for i, col in enumerate(board):
+        board_visual[col][i] = 'Q'
+
+    for row in board_visual:
+        print(''.join(row))
+
+
+if min_conflicts == 0:
+    print("\nSolution Visualization:")
+    visualize_board(best_solution)
+else:
+    print("\nNo perfect solution found within the given iterations.")
